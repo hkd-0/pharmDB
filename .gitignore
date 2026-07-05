@@ -1,0 +1,20 @@
+# Node.js dependencies
+node_modules/
+package-lock.json
+package.json
+
+# credentials
+.env
+credentials.json
+venv/
+
+# Python and System files
+__pycache__/
+*.pyc
+.DS_Store
+
+# Miscellaneous
+.credentials
+assets
+scripts/
+pharmDB_notes
