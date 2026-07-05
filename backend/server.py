@@ -24,14 +24,24 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive'
 ]
 
-CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), "..", "credentials.json")
+# --- REPLACE THIS SECTION IN server.py ---
+CREDENTIALS_FILE = 'credentials.json' # Look in the current directory
+SECRET_FILE_PATH = '/etc/secrets/credentials.json' # Render secret file path
+
+# Debugging: Print to the logs where we are looking
+print(f"[DEBUG] Looking for credentials at: {os.path.abspath(CREDENTIALS_FILE)}")
+print(f"[DEBUG] Checking existence of: {os.path.exists(CREDENTIALS_FILE)}")
+
+if os.path.exists(SECRET_FILE_PATH):
+    print(f"[DEBUG] Found secret file at {SECRET_FILE_PATH}")
+    CREDENTIALS_FILE = SECRET_FILE_PATH
 
 try:
     credentials = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
     gc = gspread.authorize(credentials)
     print("[Server Init] Google Sheets service client authenticated successfully.")
 except Exception as e:
-    print(f"[Server Init Error] Validation failed. Check credentials.json: {e}")
+    print(f"[Server Init Error] Critical failure: {e}")
     gc = None
 
 
