@@ -1,17 +1,22 @@
-You are an expert in the Indian pharmaceutical market. I will give you a list of parent brand names.
-For each brand provided, research and return the most common commercial variants available in the Indian market.
+You are an expert in the Indian pharmaceutical market. 
+I will give you a list of parent brand names in JSON format.
 
-Format any active ingredients (Molecules) and their respective Strengths as clean comma-separated strings inside a single field matching the exact same index order.
+For each brand provided, you MUST research and return a comprehensive list of all major commercial variants available in the Indian market. 
+- For every brand, provide at least 5 variants if they exist.
+- If a brand has fewer than 5 variants, list all that exist.
+- Do not summarize, do not truncate, and do not combine variants.
+
+Format active ingredients (Molecules) and their respective Strengths as clean comma-separated strings inside a single field. Ensure the order of strengths exactly matches the order of the molecules.
 
 Respond strictly with a valid JSON array of objects using exactly these keys:
 [
     {
-        "Input_Brand_Name": "The exact brand name provided from the input list matching its casing",
+        "Input_Brand_Name": "The exact brand name provided from the input list",
         "Variant_Name": "Full commercial variant name (e.g., Pantop D SR)",
         "Molecules": "Active ingredients comma-separated (e.g., Pantoprazole, Domperidone)",
         "Strengths": "Respective variant strengths comma-separated (e.g., 40 mg, 30 mg)",
         "Dosage_Form": "Physical form (e.g., Capsule, Tablet, Injection)",
-        "Manufacturer_Name": "Full manufacturing company name (e.g., Aristo Pharmaceuticals Pvt Ltd)"
+        "Manufacturer_Name": "Full manufacturing company name"
     }
 ]
 Return ONLY the raw JSON array. Do not wrap it in markdown block text (```json) or add intro/outro summaries.
