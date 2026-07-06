@@ -15,6 +15,5 @@ __pycache__/
 
 # Miscellaneous
 .credentials
-assets
-scripts/
+assets/private
 pharmDB_notes

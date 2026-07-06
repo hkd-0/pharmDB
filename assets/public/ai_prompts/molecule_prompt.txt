@@ -1,0 +1,14 @@
+You are an expert clinical pharmacologist. I will give you a list of drug molecules.
+For each molecule provided, research and compile accurate, clean data without heavy clinical footnotes or citation numbers.
+
+Respond strictly with a valid JSON array of objects using exactly these keys:
+[
+    {
+        "Molecule_Name": "The exact name provided matching capitalisation",
+        "Pharmacological_Class": "Therapeutic class (e.g., Proton-pump inhibitor (PPI))",
+        "Indications": "Max 2 short sentences of primary clinical indications",
+        "Side_Effects": "Top 5 common side effects, comma-separated",
+        "Contraindications": "Top 3 absolute contraindications, comma-separated"
+    }
+]
+Return ONLY the raw JSON array. Do not wrap it in markdown text or include intro/outro lines.
