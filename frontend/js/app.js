@@ -15,6 +15,10 @@ class PharmApp {
     }
 
     async init() {
+        // ALWAYS wire the reset button first to prevent lockouts!
+        const resetBtn = document.getElementById('btn-reset-key');
+        if (resetBtn) resetBtn.onclick = () => this.api.resetKey();
+
         try {
             // 1. Fetch the data securely
             const data = await this.api.fetchDatabase();
@@ -43,10 +47,6 @@ class PharmApp {
             const product = this.inventoryData.find(p => p.Product_ID === productId);
             this.ui.renderModal(product, this.moleculeData);
         };
-
-        // -- Reset Key Button --
-        const resetBtn = document.getElementById('btn-reset-key');
-        if (resetBtn) resetBtn.onclick = () => this.api.resetKey();
 
         // -- The Dropdown Element --
         const autocompleteDropdown = document.getElementById("autocomplete-dropdown");
