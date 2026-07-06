@@ -3,18 +3,19 @@ import time
 import json
 import os
 import gspread
-import google.generativeai as genai
+from google import genai
 from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
 
-# Load local environment configuration
+# Load local environment configuration from .env
 load_dotenv()
 
-# 1. Clean Local File Authentication & Configuration Extraction
-SCOPES = ["[https://www.googleapis.com/auth/spreadsheets](https://www.googleapis.com/auth/spreadsheets)"]
+# --- CONFIGURATION ---
+# We define scopes as a plain string list to avoid authentication formatting errors
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 CREDENTIALS_FILE = "credentials.json"
 
-# Extract configuration targets from .env
+# Extract configuration targets securely from .env
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -28,10 +29,12 @@ if not GEMINI_API_KEY:
 
 # Authenticate with Google Sheets using the local credentials file
 try:
+    print("🔑 Authenticating with Google Sheets...")
     creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
     client = gspread.authorize(creds)
-    # Direct Parity: Target the live production brand workspace
+    # Target the live production medicinal_product sheet
     sheet = client.open_by_key(SPREADSHEET_ID).worksheet("medicinal_product")
+    print("✅ Successfully connected to Google Sheets.")
 except FileNotFoundError:
     print(f"⚠️ Error: Missing required structural file '{CREDENTIALS_FILE}' in your project root.")
     exit()
@@ -39,12 +42,15 @@ except Exception as e:
     print(f"⚠️ Google Sheets Authorization Failure: {e}")
     exit()
 
-# Setup AI Engine securely
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-3.1-flash-lite')
+# Setup New Gemini AI Client
+print("🤖 Initializing Google GenAI Client...")
+client = genai.Client(api_key=GEMINI_API_KEY)
+MODEL_NAME = "gemini-3.1-flash-lite" 
 
-# 2. File Utilities for Inputs and External Prompts
+# --- UTILITY FUNCTIONS ---
+
 def read_text_file(filename):
+    """Safely read prompt or input files."""
     try:
         with open(filename, 'r', encoding='utf-8') as file:
             return file.read().strip()
@@ -53,6 +59,7 @@ def read_text_file(filename):
         return None
 
 def get_lines_from_file(filename):
+    """Read line-by-line inputs."""
     try:
         with open(filename, 'r', encoding='utf-8') as file:
             return [line.strip() for line in file if line.strip()]
@@ -60,10 +67,12 @@ def get_lines_from_file(filename):
         print(f"⚠️ Error: Could not find input file named '{filename}'.")
         return []
 
+# --- EXECUTION ---
+
 # Validate Command Line Arguments
 if len(sys.argv) < 3:
-    print("⚠️ Usage: python production_brand_loader.py <prompt_file.txt> <brands_list.txt>")
-    print("👉 Example: python production_brand_loader.py brand_prompt.txt input_brands.txt")
+    print("⚠️ Usage: python brand_ai_data_mining.py <prompt_file.txt> <brands_list.txt>")
+    print("👉 Example: python brand_ai_data_mining.py brand_prompt.txt input_brands.txt")
     exit()
 
 prompt_file_path = sys.argv[1]
@@ -73,29 +82,28 @@ base_prompt = read_text_file(prompt_file_path)
 all_brands = get_lines_from_file(brands_file_path)
 
 if not base_prompt or not all_brands:
-    print("Execution halted due to missing or empty input files.")
+    print("❌ Execution halted: Missing prompt or input list.")
     exit()
 
-# 3. Read Existing Data for Strict Deduplication
+# Deduplication logic: Fetch everything once to save API calls later
 print("\n📊 Analyzing production tab for existing entries to prevent overlaps...")
 existing_records = sheet.get_all_records()
-# Duplication lookup matching by the parent brand umbrella name column
+# Create a searchable set of brand names
 existing_brands = {str(row.get('Brand_Name', '')).strip().lower() for row in existing_records}
 next_sno = len(existing_records) + 1
 
-# Filter out elements before triggering network processing steps
+# Filter the list before firing any API calls
 filtered_brands = [b for b in all_brands if b.strip().lower() not in existing_brands]
 skipped_count = len(all_brands) - len(filtered_brands)
 
 if skipped_count > 0:
-    print(f"⏭️ Pre-filtered list: Skipping {skipped_count} parent brands already inside your database.")
+    print(f"⏭️ Pre-filtered list: Skipping {skipped_count} brands already inside your database.")
 
 if not filtered_brands:
     print("🎉 All provided brands are already up to date in production! Exiting gracefully.")
     exit()
 
-# 4. Processing in Large Optimized Batches (Grouped Data Resolution)
-# Packs multiple brand names into a single AI prompt lookup operation
+# Processing in Batches of 5 to optimize API throughput
 BATCH_SIZE = 5 
 print(f"🚀 Processing {len(filtered_brands)} brands in optimized chunks of {BATCH_SIZE}...")
 
@@ -103,28 +111,38 @@ for i in range(0, len(filtered_brands), BATCH_SIZE):
     chunk = filtered_brands[i:i + BATCH_SIZE]
     print(f"\n🧠 Querying Gemini to execute batch resolution for: {', '.join(chunk).upper()}")
     
-    combined_prompt = f"{base_prompt}\n\nHere is the target list of parent brand names to extract right now:\n{json.dumps(chunk)}"
+    # Bundle inputs for the AI to handle in one go
+    combined_prompt = f"{base_prompt}\n\nHere is the target list of brand names to extract right now:\n{json.dumps(chunk)}"
     
     try:
-        response = model.generate_content(combined_prompt)
+        # Use new GenAI SDK to generate content
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=combined_prompt
+        )
         raw_text = response.text.strip()
         
-        # Strip structural markdown wrap if added by LLM
+        # Clean potential markdown wrapping from AI output
         if raw_text.startswith("```"):
             raw_text = raw_text.strip("`").replace("json\n", "", 1)
             
         resolved_variants = json.loads(raw_text)
         
-        # Matrix box bucket compilation for a single multi-row write update command
+        # Compile row data into a single batch list for efficiency
         batch_rows_to_upload = []
         
         for variant in resolved_variants:
             brand_name = variant.get("Input_Brand_Name", "Unknown").strip()
             
-            # Form relational key sequencing formatting pattern for retail entries: PROD-XXXX
+            # Double check to prevent duplicates sneaking in mid-batch
+            if brand_name.lower() in existing_brands:
+                print(f"⏭️ Skipping duplicate found in response: {brand_name}")
+                continue
+                
+            # Create our sequential product ID: PROD-XXXX
             product_id = f"PROD-{next_sno:04d}"
             
-            new_row = [
+            row_data = [
                 next_sno,                           # S.No.
                 product_id,                         # Product_ID
                 brand_name.capitalize(),            # Brand_Name
@@ -135,23 +153,20 @@ for i in range(0, len(filtered_brands), BATCH_SIZE):
                 variant.get("Manufacturer_Name", "")# Manufacturer_Name
             ]
             
-            batch_rows_to_upload.append(new_row)
+            batch_rows_to_upload.append(row_data)
+            existing_brands.add(brand_name.lower()) # Update local tracker
             next_sno += 1
             
         if batch_rows_to_upload:
             sheet.append_rows(batch_rows_to_upload)
-            print(f"📦 Single-Ping Success: Pushed an optimized packet of {len(batch_rows_to_upload)} brand variants directly to production!")
-            
-            # Update local duplicate checking sets for each unique input brand verified in this loop pass
-            for b in chunk:
-                existing_brands.add(b.lower())
+            print(f"📦 Success: Pushed an optimized batch of {len(batch_rows_to_upload)} brand rows to the sheet!")
         else:
-            print("⚠️ No variants extracted from this chunk.")
+            print("⚠️ No unique rows extracted from this chunk.")
             
     except Exception as e:
         print(f"⚠️ Batch Pipeline Processing Interrupted: {e}")
         
-    # Enforcing strict 15-second tier throttle spacing between major grouped queries to lock down 5 RPM tier limits
+    # Cool down for 15 seconds to stay within the free tier rate limit
     if i + BATCH_SIZE < len(filtered_brands):
         print("⏳ Cooling down for 15 seconds to respect the 5 RPM ceiling...")
         time.sleep(15)
