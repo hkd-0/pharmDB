@@ -79,10 +79,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self.path == '/ping':
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
+            self.send_header('Content-Length', str(len("pong")))
             self.send_header('Access-Control-Allow-Origin', '*') 
             self.end_headers()
-            self.wfile.write(b"Server is awake!")
-            return 
+            self.wfile.write(b"pong")
+            return
 
         if not self.is_authorized(): return
 
