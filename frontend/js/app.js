@@ -26,7 +26,7 @@ class PharmApp {
             this.moleculeData = data.drug_molecule || data.molecules || [];
             
             // 2. Feed the search engine so it can build its index
-            this.search.buildIndex(this.inventoryData, this.moleculeData);
+            this.search.loadData(this.inventoryData, this.moleculeData);
             
             // 3. Update the UI statistics
             this.ui.updateStats(this.inventoryData, this.moleculeData);
