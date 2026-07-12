@@ -45,22 +45,43 @@ body {
 .header { text-align: center; margin-bottom: 50px; }
 .header h1 { font-weight: 300; font-size: 2.8rem; margin: 0 0 10px 0; color: #111; letter-spacing: -1px; }
 
-/* Minimalist Stats Grid */
+/* Minimalist Stats Grid - COMPACT VERSION */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 50px;
+    /* Allows 3-6 columns depending on screen size */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    margin-bottom: 40px;
 }
 
 .stat-card {
-    background: #fff; border: 1px solid #eaeaea; border-radius: 12px; padding: 30px 20px;
-    text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.02); transition: transform 0.2s;
+    background: #fff; 
+    border: 1px solid #eaeaea; 
+    border-radius: 12px; 
+    /* Reduced padding to slim them down */
+    padding: 20px 10px;
+    text-align: center; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
+    transition: transform 0.2s;
 }
 
 .stat-card:hover { transform: translateY(-2px); }
-.stat-num { font-size: 2.8rem; font-weight: 600; color: #2563eb; margin-bottom: 5px; }
-.stat-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; }
+
+.stat-num { 
+    /* Reduced font size for a tighter look */
+    font-size: 2rem; 
+    font-weight: 600; 
+    color: #2563eb; 
+    margin-bottom: 5px; 
+}
+
+.stat-label { 
+    /* Slightly smaller label */
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    color: #6b7280; 
+}
 
 /* Search Area */
 .search-container { width: 100%; max-width: 750px; margin: 0 auto 40px auto; }
