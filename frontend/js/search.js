@@ -74,6 +74,30 @@ export class SearchEngine {
         }).slice(0, 3); // Finally, slice ONLY the top 3 gold-medal winners.
     }
 
+    // --- RESTORED: MAIN TABLE SEARCH ---
+    search(query) {
+        // If the search bar is empty, return the whole inventory
+        if (!query) return this.inventoryData; 
+        
+        const cleanQuery = query.toLowerCase().trim();
+        
+        // Filter the main inventory grid across all relevant columns
+        return this.inventoryData.filter(item => {
+            const brand = String(item.Brand_Name || '').toLowerCase();
+            const variant = String(item.Variant_Name || '').toLowerCase();
+            const molecules = String(item['Molecule(s)'] || '').toLowerCase();
+            const pharmClass = String(item.Pharmacological_Class || '').toLowerCase();
+            const indications = String(item.Indications || '').toLowerCase();
+            
+            // If the typed letters exist in ANY of these columns, keep the row
+            return brand.includes(cleanQuery) || 
+                   variant.includes(cleanQuery) || 
+                   molecules.includes(cleanQuery) || 
+                   pharmClass.includes(cleanQuery) ||
+                   indications.includes(cleanQuery);
+        });
+    }
+
     // --- CORE RESOLUTION ENGINE ---
     resolveContext(query) {
         if (!query) return [];
