@@ -2,7 +2,7 @@
 
 import { PharmAPI } from './api.js';
 import { PharmUI, renderContextualDropdown } from './ui.js';
-import { PharmSearchEngine } from './search.js';
+import { SearchEngine } from './search.js';
 
 class PharmApp {
     constructor() {
