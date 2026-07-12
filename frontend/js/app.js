@@ -8,7 +8,7 @@ class PharmApp {
     constructor() {
         this.api = new PharmAPI();
         this.ui = new PharmUI();
-        this.search = new PharmSearchEngine();
+        this.search = new SearchEngine();
         
         this.inventoryData = [];
         this.moleculeData = [];
