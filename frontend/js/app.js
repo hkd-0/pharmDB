@@ -107,7 +107,7 @@ class PharmApp {
                 // Trigger the imported UI function to draw the magic intent boxes
                 renderContextualDropdown(query, this.search);
             }
-        }, 250));
+        }, 50));
 
         // UTILITY: Hide dropdown if they click anywhere else on the page
         document.addEventListener("click", (e) => {
