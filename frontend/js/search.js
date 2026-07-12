@@ -13,6 +13,43 @@ export class SearchEngine {
         this.moleculeData = molecules;
     }
 
+    // --- RESTORED: DEBOUNCE & RECENT SEARCHES ---
+    debounce(func, delay = 50) {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    getRecents() {
+        const recents = localStorage.getItem('pharm_recent_searches');
+        return recents ? JSON.parse(recents) : [];
+    }
+
+    saveRecent(query) {
+        if (!query) return;
+        const cleanQuery = query.trim();
+        if (cleanQuery === '') return;
+        
+        let recents = this.getRecents();
+        // Remove it if it exists so we can move it to the top
+        recents = recents.filter(item => item.toLowerCase() !== cleanQuery.toLowerCase());
+        
+        // Add to the front
+        recents.unshift(cleanQuery);
+        
+        // Keep only top 5 recent searches
+        if (recents.length > 5) {
+            recents.pop();
+        }
+        
+        localStorage.setItem('pharm_recent_searches', JSON.stringify(recents));
+    }
+    
+    // Safety alias in case app.js uses addRecent instead of saveRecent
+    addRecent(query) { this.saveRecent(query); }
+
     // --- SMART RANKING ALGORITHM ---
     _rankMatches(dataArray, query, primaryField, secondaryField = null) {
         return dataArray.filter(item => {
