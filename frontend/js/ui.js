@@ -15,7 +15,10 @@ export class PharmUI {
         
         this.modal = document.getElementById("modal");
         this.modalDetails = document.getElementById("modal-details");
+        this.clearBtn = document.getElementById("clear-search");
+        this.themeSelector = document.getElementById("theme-selector");
         
+        this.initTheme(); // Load saved theme instantly        
         this.initClock();
         this.bindEvents();
     }
@@ -25,6 +28,15 @@ export class PharmUI {
     showDashboard() {
         this.loadingState.style.display = "none";
         this.dashboardContent.style.display = "block";
+        // Auto-focus search after a tiny delay so the browser finishes drawing the dashboard
+        setTimeout(() => { this.searchBox.focus(); }, 50);
+    }
+    
+    initTheme() {
+        // Check if user has a saved theme, otherwise default to 'light'
+        const savedTheme = localStorage.getItem('pharmDB_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        if (this.themeSelector) this.themeSelector.value = savedTheme;
     }
 
     showError(message) {
@@ -132,6 +144,67 @@ export class PharmUI {
         window.onclick = (e) => {
             if (e.target === this.modal) this.modal.style.display = "none";
         };
+
+        // 1. Theme Switcher Event
+        if (this.themeSelector) {
+            this.themeSelector.addEventListener('change', (e) => {
+                const theme = e.target.value;
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('pharmDB_theme', theme); // Save preference permanently
+            });
+        }
+
+        // 2. Show/Hide Clear Button as user types
+        this.searchBox.addEventListener('input', (e) => {
+            if (this.clearBtn) {
+                this.clearBtn.style.display = e.target.value.length > 0 ? 'block' : 'none';
+            }
+        });
+
+        // 3. Clear Button Click Logic
+        if (this.clearBtn) {
+            this.clearBtn.addEventListener('click', () => {
+                this.searchBox.value = '';             // Empty the box
+                this.clearBtn.style.display = 'none';  // Hide the button
+                this.searchBox.focus();                // Put cursor back instantly
+                
+                // Trigger an artificial "input" event so your search engine knows it was cleared
+                this.searchBox.dispatchEvent(new Event('input')); 
+            });
+        }
+
+        // 4. Keyboard Navigation (Arrow keys for dropdown)
+        this.searchBox.addEventListener('keydown', (e) => {
+            const dropdown = document.getElementById("autocomplete-dropdown");
+            if (dropdown.style.display === "none") return;
+
+            const items = dropdown.querySelectorAll('.guess-block');
+            if (items.length === 0) return;
+
+            // Find which item is currently highlighted
+            let activeIndex = Array.from(items).findIndex(item => item.classList.contains('active-kb'));
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault(); // Stop cursor from moving to end of text
+                if (activeIndex > -1) items[activeIndex].classList.remove('active-kb');
+                activeIndex = (activeIndex + 1) % items.length; // Loop to top
+                items[activeIndex].classList.add('active-kb');
+                items[activeIndex].scrollIntoView({ block: "nearest" }); // Keep it in scroll view
+            } 
+            else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (activeIndex > -1) items[activeIndex].classList.remove('active-kb');
+                activeIndex = activeIndex - 1 < 0 ? items.length - 1 : activeIndex - 1; // Loop to bottom
+                items[activeIndex].classList.add('active-kb');
+                items[activeIndex].scrollIntoView({ block: "nearest" });
+            } 
+            else if (e.key === "Enter") {
+                if (activeIndex > -1) {
+                    e.preventDefault();
+                    items[activeIndex].click(); // Simulate a mouse click on the highlighted item
+                }
+            }
+        });
     }
 
     initClock() {
