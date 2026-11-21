@@ -30,4 +30,6 @@ jobs:
 
     - name: Install Frontend Dependencies
       working-directory: ./frontend
-      run: npm install --legacy-peer-deps
+      run: |
+        ls -la
+        npm install --legacy-peer-deps
