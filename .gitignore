@@ -1,7 +1,6 @@
 # Node.js dependencies
 node_modules/
-package-lock.json
-package.json
+# package-lock.json and package.json MUST be tracked in git for Node.js / CI
 
 # credentials
 .env
