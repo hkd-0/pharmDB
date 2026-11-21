@@ -43,12 +43,23 @@ class RequestHandler(BaseHTTPRequestHandler):
         # If ALLOWED_ORIGIN is set, verify it. Otherwise, allow it for local testing.
         if origin == ALLOWED_ORIGIN or ALLOWED_ORIGIN == "*":
             self.send_header("Access-Control-Allow-Origin", origin if origin else "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key, x-api-key")
 
     def do_OPTIONS(self):
         self.send_response(200, "ok")
         self._send_cors_headers()
+        self.end_headers()
+
+    def do_HEAD(self):
+        # Allow HEAD requests for pinging / health checks from cron jobs & uptime monitors
+        if self.path.startswith('/ping'):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            return
+        self.send_response(501)
         self.end_headers()
 
     def get_query_params(self):
@@ -75,13 +86,13 @@ class RequestHandler(BaseHTTPRequestHandler):
         return True
 
     def do_GET(self):
-        # 1. DUMMY ROUTE FOR PINGING (Keeps Render Awake)
-        if self.path == '/ping':
-            self.send_response(200)
+        # 1. DUMMY ROUTE FOR PINGING (Keeps Render Awake - supports exact, query params, or trailing slash)
+        if self.path.startswith('/ping'):
+        self.send_response(200)
             self.send_header('Content-type', 'text/plain')
             self.send_header('Content-Length', str(len("pong")))
-            self.send_header('Access-Control-Allow-Origin', '*') 
-            self.end_headers()
+            self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
             self.wfile.write(b"pong")
             return
 
@@ -91,7 +102,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         self._send_cors_headers()
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-
         try:
             spreadsheet = gc.open_by_key(SPREADSHEET_ID)
             
